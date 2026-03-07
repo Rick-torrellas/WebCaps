@@ -1,0 +1,24 @@
+<mi-boton></mi-boton>
+
+<script type="module">
+    import Component from './src/index.js';
+  const btnData = {
+    tagName: 'mi-boton',
+    state: { clicks: 0 },
+    template: (state) => `
+      <style>button { background: blue; color: white; }</style>
+      <button id="btn">Clicks: ${state.clicks}</button>
+    `,
+    listeners: [{
+      event: 'click',
+      selector: '#btn',
+      handler: (_, state) => {
+        state.clicks++;
+        console.log('Nuevo estado:', state.clicks);
+        // Aquí faltaría implementar la actualización reactiva del DOM
+      }
+    }]
+  };
+  console.log(btnData);
+  new Component(btnData);
+</script>
