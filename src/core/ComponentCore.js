@@ -1,12 +1,14 @@
-// src/core/ComponentCore.js
-import { TemplateProcessor } from './processors/TemplateProcessor.js';
+import TemplateProcessorPort from '../ports/TemplateProcessorPort.js';
 
 class ComponentCore {
-  constructor(definition) {
-    // Guardamos la definición completa
+  /**
+   * @param {Object} definition - Definición del componente
+   * @param {TemplateProcessorPort} templateProcessor - Adaptador para procesar templates
+   */
+  constructor(definition, templateProcessor) {
     this.definition = { ...definition };
-    // Inicializamos el estado con una copia del estado de la definición
     this.state = { ...(definition.state || {}) };
+    this.templateProcessor = templateProcessor; // Inyección de dependencia
     this.onUpdate = null;
     this.instanceId = Symbol('instanceId');
   }
@@ -31,10 +33,10 @@ class ComponentCore {
       ? template(this.state) 
       : template;
     
-    return TemplateProcessor.stringToFragment(rawTemplate);
+    // Usa el puerto inyectado en lugar de importar directamente
+    return this.templateProcessor.stringToFragment(rawTemplate);
   }
 
-  // Método de utilidad para obtener los listeners
   getListeners() {
     return this.definition.listeners || [];
   }

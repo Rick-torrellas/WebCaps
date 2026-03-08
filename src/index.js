@@ -1,35 +1,34 @@
 // src/index.js
-import ComponentCore from './core/ComponentCore.js';
-import ComponentFactory from './adapters/ComponentFactory.js';
-import ComponentRegistry from './core/ComponentRegistry.js';
+import DefineComponentUseCase from './adapters/DefineComponentUseCase.js';
+import ComponentRegistryAdapter from './adapters/ComponentRegistryAdapter.js';
+import TemplateProcessorAdapter from './adapters/TemplateProcessorAdapter.js';
+
+// Configuración por defecto (podría ser personalizable)
+const defaultRegistry = new ComponentRegistryAdapter();
+const defaultTemplateProcessor = new TemplateProcessorAdapter();
+const defaultUseCase = new DefineComponentUseCase(defaultRegistry, defaultTemplateProcessor);
 
 class Component {
   constructor(config) {
-    // Guardar configuración
     this.config = config;
     this.tagName = config.tagName.toLowerCase();
     
-    // Verificar que tenemos tagName
     if (!this.tagName) {
       throw new Error('Component: tagName es requerido');
     }
     
-    // Definir el componente si no existe
-    if (!ComponentRegistry.isComponentDefined(this.tagName)) {
-      ComponentFactory.defineComponent(config);
+    // Usar el caso de uso por defecto
+    if (!defaultRegistry.isComponentDefined(this.tagName)) {
+      defaultUseCase.execute(config);
     }
     
-    // Crear y retornar el elemento
     return this.createElement();
   }
 
   createElement() {
-    // Crear el elemento personalizado
     const element = document.createElement(this.tagName);
     
-    // Si hay estado inicial, lo aplicamos cuando el elemento esté listo
     if (this.config.initialState) {
-      // Pequeño retraso para asegurar que el core está inicializado
       setTimeout(() => {
         if (element.setState) {
           element.setState(this.config.initialState);
@@ -40,11 +39,25 @@ class Component {
     return element;
   }
 
-  // Método estático para definir componentes sin instanciar
-  static define(config) {
-    if (!ComponentRegistry.isComponentDefined(config.tagName)) {
-      ComponentFactory.defineComponent(config);
+  // Método estático que permite inyección de dependencias
+  static define(config, registry = defaultRegistry, useCase = defaultUseCase) {
+    if (!registry.isComponentDefined(config.tagName)) {
+      useCase.execute(config);
     }
+  }
+
+  // Método para configurar la fábrica con implementaciones personalizadas
+  static configure(options = {}) {
+    const registry = options.registry || defaultRegistry;
+    const templateProcessor = options.templateProcessor || defaultTemplateProcessor;
+    return {
+      define: (config) => {
+        const useCase = new DefineComponentUseCase(registry, templateProcessor);
+        Component.define(config, registry, useCase);
+      },
+      registry,
+      templateProcessor
+    };
   }
 }
 
